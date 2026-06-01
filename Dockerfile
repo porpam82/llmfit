@@ -1,47 +1,49 @@
-# Multi-stage build for llmfit
-# Stage 1: Build the Rust binary
+# ---------- Frontend ----------
+FROM node:22 AS frontend
+
+WORKDIR /build
+
+COPY . .
+
+WORKDIR /build/llmfit-web
+
+RUN npm ci
+RUN npm run build
+
+# ---------- Rust Builder ----------
 FROM rust:1.88-slim AS builder
 
-# Install build dependencies
 RUN apt-get update && apt-get install -y \
     pkg-config \
     libssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Set working directory
 WORKDIR /build
 
-# Copy workspace configuration
-COPY Cargo.toml Cargo.lock ./
+COPY . .
 
-# Copy all workspace members
-COPY llmfit-core/ ./llmfit-core/
-COPY llmfit-tui/ ./llmfit-tui/
-COPY llmfit-desktop/ ./llmfit-desktop/
-COPY data/ ./data/
+# copiar frontend compilado
+COPY --from=frontend /build/llmfit-web/dist ./llmfit-web/dist
 
-# Build release binary for llmfit-tui
 RUN cargo build --release -p llmfit
 
-# Stage 2: Runtime image
+# ---------- Runtime ----------
 FROM debian:bookworm-slim
 
-# Install runtime dependencies for hardware detection
 RUN apt-get update && apt-get install -y \
     pciutils \
     lshw \
+    ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy the binary from builder
+# binário
 COPY --from=builder /build/target/release/llmfit /usr/local/bin/llmfit
 
-# Create a non-root user
-RUN useradd -m -u 1000 llmfit && \
-    chown -R llmfit:llmfit /usr/local/bin/llmfit
+# assets do dashboard
+COPY --from=builder /build/llmfit-web/dist /llmfit-web/dist
 
-USER llmfit
+EXPOSE 8787
 
-# Set default command to output JSON recommendations
-# In Kubernetes, this will run once per node and log results
 ENTRYPOINT ["/usr/local/bin/llmfit"]
-CMD ["recommend", "--json"]
+
+CMD ["serve","--host","0.0.0.0","--port","8787"]

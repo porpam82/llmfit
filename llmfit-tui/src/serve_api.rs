@@ -509,12 +509,12 @@ async fn start_download(
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
     Json(body): Json<DownloadBody>,
 ) -> ApiResult<Json<serde_json::Value>> {
-    if !addr.ip().is_loopback() {
-        return Err(ApiError::new(
-            StatusCode::FORBIDDEN,
-            "Downloads restricted to localhost",
-        ));
-    }
+// if !addr.ip().is_loopback() {
+//     return Err(ApiError::new(
+//         StatusCode::FORBIDDEN,
+//         "Plan restricted to localhost",
+//     ));
+// }
 
     {
         let dl = state.active_download.read().await;
@@ -644,12 +644,12 @@ async fn download_status(
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
     Path(id): Path<String>,
 ) -> ApiResult<Json<serde_json::Value>> {
-    if !addr.ip().is_loopback() {
-        return Err(ApiError::new(
-            StatusCode::FORBIDDEN,
-            "Download status restricted to localhost",
-        ));
-    }
+// if !addr.ip().is_loopback() {
+//     return Err(ApiError::new(
+//         StatusCode::FORBIDDEN,
+//         "Plan restricted to localhost",
+//     ));
+// }
     let dl = state.active_download.read().await;
     match dl.as_ref() {
         Some(d) if d.id == id => Ok(Json(serde_json::json!({

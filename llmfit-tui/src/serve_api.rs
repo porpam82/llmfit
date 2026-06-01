@@ -672,12 +672,12 @@ async fn plan_estimate(
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
     Json(body): Json<PlanBody>,
 ) -> ApiResult<Json<serde_json::Value>> {
-    if !addr.ip().is_loopback() {
-        return Err(ApiError::new(
-            StatusCode::FORBIDDEN,
-            "Plan restricted to localhost",
-        ));
-    }
+// if !addr.ip().is_loopback() {
+//     return Err(ApiError::new(
+//         StatusCode::FORBIDDEN,
+//         "Plan restricted to localhost",
+//     ));
+// }
 
     let model = state
         .models
